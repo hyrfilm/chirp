@@ -1,0 +1,9 @@
+{
+  "_comment": "Run from repo root with the dev server up: `skivvy test/api/cfg.json` (inside `nix develop`). Subset matching is on globally — every test asserts only the fields it lists, so legitimate additions to the API don't cause false alarms.",
+  "base_url": "http://host.docker.internal:3000",
+  "tests": "./test/api/cases",
+  "brace_expansion": true,
+  "match_subsets": true,
+  "fail_fast": false,
+  "log_level": "INFO"
+}

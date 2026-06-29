@@ -6,7 +6,7 @@ import {
     createTweet,
 } from "@/app/server/tweets.ts";
 
-// Writes to the database per request, so it must never be prerendered/cached.
+// Writes to the database per request, so avoid prerendering/caching
 export const dynamic = "force-dynamic";
 
 /*
@@ -15,6 +15,8 @@ export const dynamic = "force-dynamic";
  *
  * Creates a tweet authored by `username` and returns the created tweet (same
  * shape as a feed entry) with status 201.
+ *
+ * TODO: Allowing the user-id (uuid7) would be nice support as well
  */
 export async function POST(request: NextRequest) {
     let body: unknown;
