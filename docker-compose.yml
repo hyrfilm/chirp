@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:18-alpine3.24
+    container_name: postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-chirp_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chirp_password}
+      POSTGRES_DB: ${POSTGRES_DB:-chirp_db}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    tmpfs:
+      - /tmp:size=1024m
+      - /run/postgresql:size=256m
+      - /var/lib/postgresql:size=1024m
