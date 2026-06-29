@@ -146,8 +146,6 @@ describe("property tests", () => {
             age: fc.integer({
                 min: 1,
                 max: 120,
-                noNaN: true,
-                noDefaultInfinity: true,
             }),
         }),
         { maxLength: 200 },
@@ -158,8 +156,6 @@ describe("property tests", () => {
             age: fc.integer({
                 min: MIN_TEST_AGE,
                 max: MAX_TEST_AGE,
-                noNaN: true,
-                noDefaultInfinity: true,
             }),
         }),
         { maxLength: 200 },

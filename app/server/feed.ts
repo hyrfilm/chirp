@@ -1,10 +1,8 @@
-import { type Kysely, sql } from "kysely";
-
-import type { Database, UUID } from "./db/types.ts";
+import type { UUID } from "./db/types.ts";
 
 /*
  * The default and maximum number of tweets returned per feed page. The cap
- * protects the database from a client requesting an unbounded page size.
+ * protects the API from a client requesting an unbounded page size.
  */
 export const DEFAULT_FEED_LIMIT = 30;
 export const MAX_FEED_LIMIT = 100;
@@ -34,86 +32,142 @@ export interface FeedPage {
 }
 
 /*
- * Resolves a user by username, case-insensitively, mirroring the
- * lower(username) unique index. Returning the id lets the caller distinguish
- * a missing user (404) from a user with an empty feed (200, no tweets).
+ * Dummy data source.
+ *
+ * This stands in for the database while seeding is handled separately. The
+ * shape, ordering, and pagination semantics match what the real query will
+ * produce, so the route handler and its skivvy tests stay unchanged when the
+ * data layer is swapped in:
+ *
+ *   - tweet ids are uuidv7-shaped and lexicographically sortable, so newest
+ *     first is simply id DESC, and the cursor is just the last id;
+ *   - a feed only ever contains tweets from authors the viewer follows.
  */
-export async function findUserIdByUsername(
-    db: Kysely<Database>,
-    username: string,
-): Promise<UUID | undefined> {
-    const row = await db
-        .selectFrom("users")
-        .select("id")
-        .where(sql`lower(username)`, "=", username.toLowerCase())
-        .executeTakeFirst();
 
-    return row?.id;
-}
+const DUMMY_AUTHORS: FeedAuthor[] = [
+    {
+        id: authorId(1),
+        username: "ada",
+        firstName: "Ada",
+        lastName: "Lovelace",
+    },
+    {
+        id: authorId(2),
+        username: "grace",
+        firstName: "Grace",
+        lastName: "Hopper",
+    },
+    {
+        id: authorId(3),
+        username: "alan",
+        firstName: "Alan",
+        lastName: "Turing",
+    },
+    {
+        id: authorId(4),
+        username: "linus",
+        firstName: "Linus",
+        lastName: "Torvalds",
+    },
+];
+
+const DUMMY_TWEET_TEXTS = [
+    "Just shipped a tiny refactor and somehow feel unstoppable.",
+    "Reminder: the bug is almost always in the code you were sure was fine.",
+    "Coffee count today: yes.",
+    "Naming things remains the hardest problem in computer science.",
+    "Wrote a test before the code. Who even am I anymore.",
+    "Deleted 200 lines and the feature works better now.",
+    "The feed is keyset-paginated and I am at peace.",
+    "uuidv7 means my ids sort themselves. Living in the future.",
+    "Rubber-duck debugging works terrifyingly well.",
+    "Today's lesson: read the docs before guessing the API.",
+    "Merged on a Friday. Pray for me.",
+    "Small commits, big dreams.",
+];
+
+// 36 tweets → exercises a full default page (30) plus a partial second page.
+const TWEET_COUNT = 36;
+const FEED_REFERENCE_TIME = Date.parse("2026-06-29T12:00:00.000Z");
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+const BOB_FEED: FeedTweet[] = buildBobFeed();
 
 /*
- * Returns one page of the feed for `viewerId`: the most recent tweets from
- * the users they follow, newest first, joined with each author's details.
- *
- * Ordering and pagination both ride on the uuidv7 tweet id, which is
- * chronologically sortable. `WHERE id < :cursor ORDER BY id DESC` pairs with
- * the tweets(author_id, id DESC) index and, unlike OFFSET, neither drifts nor
- * slows down as the caller pages deeper.
+ * Maps a username to the tweets that make up that user's feed. "bob" follows
+ * everyone in DUMMY_AUTHORS; "alice" follows nobody (an empty feed, useful for
+ * exercising the empty-state UX). Unknown usernames are absent → 404.
  */
-export async function getFeedPage(
-    db: Kysely<Database>,
-    viewerId: UUID,
+const FEEDS_BY_USERNAME = new Map<string, FeedTweet[]>([
+    ["bob", BOB_FEED],
+    ["alice", []],
+]);
+
+/*
+ * Returns one page of `username`'s feed (newest first), or null if no such
+ * user exists. Pagination is keyset-based on the tweet id: `cursor` is the id
+ * of the last tweet from the previous page.
+ */
+export function getFeedPage(
+    username: string,
     options: { limit?: number; cursor?: string | null } = {},
-): Promise<FeedPage> {
+): FeedPage | null {
+    const feed = FEEDS_BY_USERNAME.get(username.toLowerCase());
+    if (!feed) {
+        return null;
+    }
+
     const limit = clampLimit(options.limit);
     const cursor = normalizeCursor(options.cursor);
 
-    let query = db
-        .selectFrom("tweets as t")
-        .innerJoin("users as author", "author.id", "t.author_id")
-        .innerJoin("followers as f", (join) =>
-            join
-                .onRef("f.followed_id", "=", "t.author_id")
-                .on("f.follower_id", "=", viewerId),
-        )
-        .select([
-            "t.id as id",
-            "t.text as text",
-            "t.created_at as createdAt",
-            "author.id as authorId",
-            "author.username as authorUsername",
-            "author.first_name as authorFirstName",
-            "author.last_name as authorLastName",
-        ])
-        .orderBy("t.id", "desc")
-        // Fetch one extra row to detect whether a further page exists without
-        // a second count query.
-        .limit(limit + 1);
+    const start = cursor
+        ? feed.findIndex((tweet) => tweet.id < cursor) // feed is sorted id DESC
+        : 0;
 
-    if (cursor) {
-        query = query.where("t.id", "<", cursor);
-    }
+    // An unmatched cursor (start === -1) yields an empty final page.
+    const window = start === -1 ? [] : feed.slice(start, start + limit + 1);
 
-    const rows = await query.execute();
-
-    const hasMore = rows.length > limit;
-    const pageRows = hasMore ? rows.slice(0, limit) : rows;
-
-    const tweets: FeedTweet[] = pageRows.map((row) => ({
-        id: row.id,
-        text: row.text,
-        createdAt: row.createdAt.toISOString(),
-        author: {
-            id: row.authorId,
-            username: row.authorUsername,
-            firstName: row.authorFirstName,
-            lastName: row.authorLastName,
-        },
-    }));
-
+    const hasMore = window.length > limit;
+    const tweets = hasMore ? window.slice(0, limit) : window;
     const nextCursor = hasMore ? (tweets.at(-1)?.id ?? null) : null;
 
     return { tweets, nextCursor };
+}
+
+function buildBobFeed(): FeedTweet[] {
+    const tweets: FeedTweet[] = [];
+
+    for (let index = 1; index <= TWEET_COUNT; index++) {
+        // Older tweets get smaller ids and earlier timestamps, so id order and
+        // chronological order agree.
+        const ageInHours = TWEET_COUNT - index;
+        tweets.push({
+            id: tweetId(index),
+            text: DUMMY_TWEET_TEXTS[(index - 1) % DUMMY_TWEET_TEXTS.length],
+            createdAt: new Date(
+                FEED_REFERENCE_TIME - ageInHours * ONE_HOUR_MS,
+            ).toISOString(),
+            author: DUMMY_AUTHORS[(index - 1) % DUMMY_AUTHORS.length],
+        });
+    }
+
+    // Newest first, matching the real query's ORDER BY id DESC.
+    return tweets.sort((a, b) => (a.id < b.id ? 1 : -1));
+}
+
+/*
+ * Builds a uuidv7-shaped, lexicographically sortable id from a counter: a
+ * larger counter yields a larger id. Real ids will be genuine uuidv7 values;
+ * these only need the same sortability and a valid UUID shape.
+ */
+function tweetId(counter: number): UUID {
+    const suffix = counter.toString(16).padStart(12, "0");
+    return `00000000-0000-7000-8000-${suffix}`;
+}
+
+function authorId(counter: number): UUID {
+    const suffix = counter.toString(16).padStart(12, "0");
+    return `00000000-0000-7000-9000-${suffix}`;
 }
 
 function clampLimit(limit?: number): number {
@@ -127,9 +181,8 @@ const UUID_PATTERN =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /*
- * The cursor is the id of the last tweet from the previous page. Anything
- * that is not a well-formed UUID is treated as absent (returns the first
- * page) rather than reaching the database as an invalid comparison.
+ * The cursor is the id of the last tweet from the previous page. Anything that
+ * is not a well-formed UUID is treated as absent (returns the first page).
  */
 function normalizeCursor(value?: string | null): UUID | undefined {
     if (!value || !UUID_PATTERN.test(value)) {

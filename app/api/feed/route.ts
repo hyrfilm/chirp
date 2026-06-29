@@ -1,15 +1,9 @@
 import type { NextRequest } from "next/server";
 
-import { db } from "@/app/server/db/client.ts";
-import {
-    DEFAULT_FEED_LIMIT,
-    findUserIdByUsername,
-    getFeedPage,
-} from "@/app/server/feed.ts";
+import { DEFAULT_FEED_LIMIT, getFeedPage } from "@/app/server/feed.ts";
 
-// The handler touches the database via the pg pool, so it must run on the
-// Node.js runtime and be evaluated per request rather than prerendered.
-export const runtime = "nodejs";
+// Reads query parameters, so it must be evaluated per request rather than
+// prerendered.
 export const dynamic = "force-dynamic";
 
 /*
@@ -38,18 +32,17 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const viewerId = await findUserIdByUsername(db, username);
-    if (!viewerId) {
+    const page = getFeedPage(username, {
+        limit,
+        cursor: params.get("cursor"),
+    });
+
+    if (page === null) {
         return Response.json(
             { error: `No user found with username '${username}'.` },
             { status: 404 },
         );
     }
-
-    const page = await getFeedPage(db, viewerId, {
-        limit,
-        cursor: params.get("cursor"),
-    });
 
     return Response.json(page);
 }
