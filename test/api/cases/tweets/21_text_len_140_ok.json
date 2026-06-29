@@ -1,0 +1,11 @@
+{
+  "_comment": "Boundary: exactly 140 characters is the maximum allowed and must be accepted.",
+  "url": "/api/tweets",
+  "method": "post",
+  "body": {
+    "username": "alice",
+    "text": "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
+  },
+  "status": 201,
+  "response": { "id": "$uuid" }
+}

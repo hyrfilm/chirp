@@ -1,0 +1,11 @@
+{
+  "_comment": "Boundary: 139 characters (just under the 140 limit) is accepted. Together with the 140 and 141 cases this pins the exact length boundary, where off-by-one bugs live.",
+  "url": "/api/tweets",
+  "method": "post",
+  "body": {
+    "username": "alice",
+    "text": "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678"
+  },
+  "status": 201,
+  "response": { "id": "$uuid" }
+}

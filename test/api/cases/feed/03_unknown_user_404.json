@@ -1,0 +1,6 @@
+{
+  "_comment": "An unknown user is a 404 with a client-readable error message (we don't pin the wording).",
+  "url": "/api/feed?username=definitely_not_a_user_42",
+  "status": 404,
+  "response": { "error": "$text" }
+}

@@ -1,0 +1,6 @@
+{
+  "_comment": "username is required — omitting it is a 400, not an empty feed.",
+  "url": "/api/feed",
+  "status": 400,
+  "response": { "error": "$text" }
+}

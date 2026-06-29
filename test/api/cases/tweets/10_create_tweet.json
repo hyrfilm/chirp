@@ -1,0 +1,15 @@
+{
+  "_comment": "Create a tweet as alice (whom bob follows). Because we control the input, exact-value assertions are justified here. Store the new id for the round-trip check.",
+  "url": "/api/tweets",
+  "method": "post",
+  "body": {
+    "username": "alice",
+    "text": "Round-trip check: this exact tweet should appear in Bob's feed."
+  },
+  "status": 201,
+  "response": {
+    "id": "$store new_tweet_id",
+    "text": "Round-trip check: this exact tweet should appear in Bob's feed.",
+    "author": { "username": "alice" }
+  }
+}

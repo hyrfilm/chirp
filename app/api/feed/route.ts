@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const page = getFeedPage(username, {
+    const page = await getFeedPage(username, {
         limit,
         cursor: params.get("cursor"),
     });

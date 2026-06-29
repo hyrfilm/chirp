@@ -1,0 +1,13 @@
+{
+  "_comment": "The tweet we just created is the newest in the system, so it is first in Bob's feed (Bob follows alice). $fetch asserts the first tweet's id equals the one we stored — the create -> read round-trip end to end.",
+  "url": "/api/feed?username=bob&limit=1",
+  "response": {
+    "tweets": [
+      {
+        "id": "$fetch new_tweet_id",
+        "text": "Round-trip check: this exact tweet should appear in Bob's feed.",
+        "author": { "username": "alice" }
+      }
+    ]
+  }
+}

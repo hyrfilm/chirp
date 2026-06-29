@@ -1,0 +1,11 @@
+{
+  "_comment": "Boundary: 141 characters (one over the limit) is rejected with a 400.",
+  "url": "/api/tweets",
+  "method": "post",
+  "body": {
+    "username": "alice",
+    "text": "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
+  },
+  "status": 400,
+  "response": { "error": "$text" }
+}

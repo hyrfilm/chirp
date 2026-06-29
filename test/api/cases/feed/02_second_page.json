@@ -1,0 +1,13 @@
+{
+  "_comment": "Keyset pagination advances: feeding back the stored cursor returns a further page, still newest-first. State flows from the previous test via <cursor> with no glue code.",
+  "url": "/api/feed?username=bob&limit=2&cursor=<cursor>",
+  "match_every_entry": true,
+  "response": {
+    "tweets": [
+      {
+        "id": "$desc",
+        "author": { "username": "$text" }
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "_comment": "Bob's feed is newest-first and every entry is a tweet from someone he follows. The content is faker-random, so we assert invariants (ids strictly descending = reverse-chronological, an author username present) rather than exact text. Store the cursor for the next page.",
+  "url": "/api/feed?username=bob&limit=2",
+  "match_every_entry": true,
+  "response": {
+    "tweets": [
+      {
+        "id": "$desc",
+        "text": "$text",
+        "createdAt": "$text",
+        "author": { "username": "$text" }
+      }
+    ],
+    "nextCursor": "$store cursor"
+  }
+}
