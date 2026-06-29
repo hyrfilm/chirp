@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test": "vitest",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build:all": "npm run build && npm run build:docker",
+    "build:docker": "docker buildx build -f docker/Dockerfile docker -t postgres:18"
   },
   "dependencies": {
     "next": "16.2.9",
@@ -20,8 +23,10 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "fast-check": "^4.8.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   },
   "ignoreScripts": [
     "sharp",
