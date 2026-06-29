@@ -7,6 +7,7 @@
     "test": "vitest",
     "test:coverage": " vitest --coverage ",
     "test:api": "skivvy test/api/cfg.json",
+    "test:api:docker": "npm run start:all | sleep 5 & docker run -it --volume ./:/app --rm hyrfilm/skivvy skivvy test/api/cfg.docker.json",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
