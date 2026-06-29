@@ -8,8 +8,11 @@ import {
     atLeastTwice,
     constrainedExactlyTwice,
     exactlyTwice,
-    type User,
-} from "lib/age-comparsions.ts";
+} from "lib/age-comparisons";
+type User = { age: number };
+
+// this results in 50,000 permutations of these tests are run
+fc.configureGlobal({ numRuns: 50_000 });
 
 function bruteForceAtLeastTwice(
     users: readonly User[],
@@ -140,26 +143,26 @@ describe("constrainedExactlyTwice", () => {
 describe("property tests", () => {
     const generalUserArray = fc.array(
         fc.record({
-            age: fc.double({
+            age: fc.integer({
                 min: 1,
                 max: 120,
                 noNaN: true,
                 noDefaultInfinity: true,
             }),
         }),
-        { maxLength: 100 },
+        { maxLength: 200 },
     );
 
     const constrainedUserArray = fc.array(
         fc.record({
-            age: fc.double({
+            age: fc.integer({
                 min: MIN_TEST_AGE,
                 max: MAX_TEST_AGE,
                 noNaN: true,
                 noDefaultInfinity: true,
             }),
         }),
-        { maxLength: 100 },
+        { maxLength: 200 },
     );
 
     it("atLeastTwice agrees with the brute-force implementation", () => {
