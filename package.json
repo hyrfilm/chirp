@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest --coverage",
+    "test": "vitest",
+    "test:coverage": " vitest --coverage ",
+    "test:api": "skivvy test/api/cfg.json",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start:all":  "docker compose up --detach & npm run db:reset:seed && next start",
     "lint": "eslint",
     "db:migrate": "node scripts/migrate.ts latest",
     "db:migrate:up": "node scripts/migrate.ts up",
@@ -17,8 +20,7 @@
     "db:seed": "npm run db:clear && npm run db:migrate && npm run db:seed:load",
     "db:seed:load": "node scripts/seed.ts",
     "db:reset:seed": "npm run db:seed",
-    "build:all": "npm run build && npm run build:docker",
-    "build:docker": "docker buildx build -f docker/Dockerfile docker -t postgres:18"
+    "build:all": "npm run build"
   },
   "dependencies": {
     "kysely": "^0.29.2",
